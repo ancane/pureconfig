@@ -10,7 +10,7 @@ import pureconfig.generic.derivation.WidenType.widen
 
 type EnumConfigReader[A] = EnumConfigReaderDerivation.Default.EnumConfigReader[A]
 
-trait EnumConfigReaderDerivation(transformName: String => String) {
+trait EnumConfigReaderDerivation(transformName: String => List[String]) {
 
   trait EnumConfigReader[A] extends ConfigReader[A]
 
@@ -50,15 +50,17 @@ trait EnumConfigReaderDerivation(transformName: String => String) {
       }
 
     inline def ordinal[A](
-        inline transformName: String => String,
+        inline transformName: String => List[String],
         inline value: String
     )(using m: Mirror.SumOf[A]) = {
-      val ord = Labels.transformed[m.MirroredElemLabels](transformName).indexOf(value)
-      Option.when(ord >= 0)(ord)
+      Labels
+        .transformed[m.MirroredElemLabels](transformName)
+        .zipWithIndex
+        .collectFirst { case (ord, i) if ord.indexOf(value) >= 0 => i }
     }
   }
 }
 
 object EnumConfigReaderDerivation {
-  object Default extends EnumConfigReaderDerivation(ConfigFieldMapping(PascalCase, KebabCase))
+  object Default extends EnumConfigReaderDerivation(ConfigFieldMapping(PascalCase, List(KebabCase)))
 }

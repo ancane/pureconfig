@@ -58,7 +58,7 @@ private[pureconfig] case class ProductHintImpl[A](
 ) extends ProductHint[A] {
 
   def from(cursor: ConfigObjectCursor, fieldName: String): ProductHint.Action = {
-    val keyStr = fieldMapping(fieldName)
+    val keyStr = fieldMapping(fieldName).head
     val keyCur = cursor.atKeyOrUndefined(keyStr)
     if (useDefaultArgs)
       ProductHint.UseOrDefault(keyCur, keyStr)
@@ -82,7 +82,7 @@ private[pureconfig] case class ProductHintImpl[A](
   }
 
   def to(value: Option[ConfigValue], fieldName: String): Option[(String, ConfigValue)] =
-    value.map(fieldMapping(fieldName) -> _)
+    value.map(fieldMapping(fieldName).head -> _)
 }
 
 object ProductHint {
@@ -120,7 +120,7 @@ object ProductHint {
   case class UseOrDefault(cursor: ConfigCursor, field: String) extends Action
 
   def apply[A](
-      fieldMapping: ConfigFieldMapping = ConfigFieldMapping(CamelCase, KebabCase),
+      fieldMapping: ConfigFieldMapping = (x: String) => List(ConfigFieldMapping(CamelCase, KebabCase).apply(x)),
       useDefaultArgs: Boolean = true,
       allowUnknownKeys: Boolean = true
   ): ProductHint[A] =

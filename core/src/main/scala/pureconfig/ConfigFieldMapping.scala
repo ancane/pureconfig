@@ -2,9 +2,9 @@ package pureconfig
 
 /** A mapping between case class fields and their respective keys in the config.
   */
-trait ConfigFieldMapping extends (String => String) {
+trait ConfigFieldMapping extends (String => List[String]) {
 
-  def apply(fieldName: String): String
+  def apply(fieldName: String): List[String]
 
   /** Returns a `ConfigFieldMapping` that uses this mapping with some overrides.
     *
@@ -15,7 +15,7 @@ trait ConfigFieldMapping extends (String => String) {
     *   mapping.
     */
   def withOverrides(overrides: (String, String)*) =
-    ConfigFieldMapping(overrides.toMap.withDefault(apply))
+    ConfigFieldMapping(overrides.map { case (k, v) => k -> List(v) }.toMap.withDefault(apply))
 }
 
 object ConfigFieldMapping {
@@ -28,9 +28,9 @@ object ConfigFieldMapping {
     * @return
     *   a ConfigFieldMapping created from the provided function.
     */
-  def apply(f: String => String): ConfigFieldMapping =
+  def apply(f: String => List[String]): ConfigFieldMapping =
     new ConfigFieldMapping {
-      def apply(fieldName: String): String = f(fieldName)
+      def apply(fieldName: String): List[String] = f(fieldName)
     }
 
   /** Creates a ConfigFieldMapping according to the naming conventions specified both for the object that will receive
@@ -43,11 +43,19 @@ object ConfigFieldMapping {
     * @return
     *   a ConfigFieldMapping created according to the provided naming conventions.
     */
-  def apply(typeFieldConvention: NamingConvention, configFieldConvention: NamingConvention): ConfigFieldMapping = {
+  def apply(typeFieldConvention: NamingConvention, configFieldConvention: NamingConvention): String => String = {
     if (typeFieldConvention == configFieldConvention) {
-      apply(identity)
+      identity
     } else {
-      apply(typeFieldConvention.toTokens _ andThen configFieldConvention.fromTokens)
+      typeFieldConvention.toTokens _ andThen ((xs: Seq[String]) => configFieldConvention.fromTokens(xs))
     }
   }
+
+  def apply(
+      typeFieldConvention: NamingConvention,
+      configFieldConventions: List[NamingConvention]
+  ): ConfigFieldMapping = {
+    apply(typeFieldConvention.toTokens _ andThen ((xs: Seq[String]) => configFieldConventions.map(_.fromTokens(xs))))
+  }
+
 }

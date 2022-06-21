@@ -8,7 +8,7 @@ class ConfigFieldMappingSuite extends AnyFlatSpec with Matchers {
   behavior of "ConfigFieldMapping"
 
   it should "allow defining a mapping using a function" in {
-    val mapping = ConfigFieldMapping(_.replace("Field", "ConfigKey"))
+    val mapping = ConfigFieldMapping((x: String) => List(x.replace("Field", "ConfigKey")))
     mapping("theBeautifulField") === "theBeautifulConfigKey"
     mapping("theUglyFld") === "theUglyFld"
   }
@@ -20,7 +20,7 @@ class ConfigFieldMappingSuite extends AnyFlatSpec with Matchers {
   }
 
   it should "allow defining mappings with some overrides" in {
-    val mapping = ConfigFieldMapping(CamelCase, SnakeCase).withOverrides("theUglyFld" -> "the_ugly_field")
+    val mapping = ConfigFieldMapping(CamelCase, List(SnakeCase)).withOverrides("theUglyFld" -> "the_ugly_field")
 
     mapping("theBeautifulField") === "the_beautiful_field"
     mapping("theUglyFld") === "the_ugly_field"

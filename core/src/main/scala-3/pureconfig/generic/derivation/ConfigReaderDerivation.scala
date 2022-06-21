@@ -17,8 +17,14 @@ trait ConfigReaderDerivation extends CoproductConfigReaderDerivation with Produc
 object ConfigReaderDerivation {
   object Default
       extends ConfigReaderDerivation
-      with CoproductConfigReaderDerivation(ConfigFieldMapping(PascalCase, KebabCase), "type")
-      with ProductConfigReaderDerivation(ConfigFieldMapping(CamelCase, KebabCase))
+      with CoproductConfigReaderDerivation(ConfigFieldMapping(PascalCase, List(KebabCase)), "type")
+      with ProductConfigReaderDerivation(ConfigFieldMapping(CamelCase, List(KebabCase)))
+
+  object CamelPascal
+      extends ConfigReaderDerivation
+      with CoproductConfigReaderDerivation(ConfigFieldMapping(PascalCase, List(KebabCase)), "type")
+      with ProductConfigReaderDerivation(ConfigFieldMapping(CamelCase, List(KebabCase, CamelCase, PascalCase)))
 }
 
 val default = ConfigReaderDerivation.Default
+val camelPascal = ConfigReaderDerivation.CamelPascal

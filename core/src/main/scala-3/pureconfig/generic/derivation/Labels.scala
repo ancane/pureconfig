@@ -6,8 +6,8 @@ import scala.deriving.Mirror
 
 object Labels {
   inline def transformed[T <: Tuple](
-      inline transform: String => String
-  ): List[String] =
+      inline transform: String => List[String]
+  ): List[List[String]] =
     inline erasedValue[T] match {
       case _: (h *: t) =>
         transform(constValue[h & String]) :: transformed[t](transform)

@@ -10,7 +10,9 @@ import scala.util.chaining.*
 import pureconfig.error.{ConfigReaderFailures, ConvertFailure, KeyNotFound, UnknownKey, WrongSizeList}
 import pureconfig.generic.derivation.WidenType.widen
 
-trait ProductConfigReaderDerivation(fieldMapping: ConfigFieldMapping) { self: ConfigReaderDerivation =>
+trait ProductConfigReaderDerivation(
+    fieldMapping: ConfigFieldMapping
+) { self: ConfigReaderDerivation =>
   inline def derivedProduct[A](using m: Mirror.ProductOf[A]): ConfigReader[A] =
     inline erasedValue[A] match {
       case _: Tuple =>
@@ -40,15 +42,22 @@ trait ProductConfigReaderDerivation(fieldMapping: ConfigFieldMapping) { self: Co
               result <-
                 Labels
                   .transformed[m.MirroredElemLabels](fieldMapping)
-                  .pipe(labels =>
+                  .pipe(keys =>
                     readTuple[m.MirroredElemTypes, 0](
-                      labels.map(objCur.atKeyOrUndefined(_)),
-                      labels.map(KeyNotFound.forKeys(_, objCur.keys))
+                      keys.map(k => findConfigKey(objCur, k)),
+                      keys.map(ks => KeyNotFound.forKeys(ks.head, objCur.keys))
                     )
                   )
             } yield m.fromProduct(result)
         }
     }
+
+  private def findConfigKey(objCur: ConfigObjectCursor, keys: List[String]): ConfigCursor = {
+    keys
+      .find { key => Option(objCur.objValue.get(key)).isDefined }
+      .map { key => objCur.atKeyOrUndefined(key) }
+      .getOrElse(objCur.atKeyOrUndefined(keys.head))
+  }
 
   inline def readTuple[T <: Tuple, N <: Int](
       cursors: List[ConfigCursor],

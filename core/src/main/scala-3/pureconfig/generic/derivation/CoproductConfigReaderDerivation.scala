@@ -35,6 +35,7 @@ trait CoproductConfigReaderDerivation(fieldMapping: ConfigFieldMapping, optionFi
       val readers =
         Labels
           .transformed[m.MirroredElemLabels](fieldMapping)
+          .map(_.head)
           .zip(deriveForSubtypes[m.MirroredElemTypes, A])
           .toMap
     }
